@@ -17,7 +17,7 @@ class RWKV_RNN():
 
     def __init__(self, onnxdir: str, n_layer=24):
         if VERIFY_HB_ONNX:
-            self.embed = OrtWrapper(os.path.join(onnxdir, 'optimized_embed.onnx')) # hbort not support int32 input (only float and uint8)
+            self.embed = OrtWrapper(os.path.join(onnxdir, 'embed.onnx')) # hbort not support int32 input (only float and uint8)
             self.head = HBOrtWrapper(os.path.join(onnxdir, 'optimized_head.onnx'))
             self.backbone = []
             for i in range(n_layer):
@@ -47,7 +47,7 @@ class RWKV_RNN():
 def parse_args():
     parser = argparse.ArgumentParser(description='rwkv.onnx onnxruntime demo')
     parser.add_argument('--onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/tools/models", help='rwkv onnx model directory.')
-    parser.add_argument('--length', type=int, default=100, help='max output length.')
+    parser.add_argument('--length', type=int, default=20, help='max output length.')
     parser.add_argument('--n_layer', type=int, default=24, help='layer number, use 24 by default.')
     parser.add_argument('--n_embd', type=int, default=1024, help='embedding length, use 1024 by default.')
     args = parser.parse_args()
@@ -58,7 +58,8 @@ def main():
     tokenizer = Tokenizer.from_file("rwkv/20B_tokenizer.json")
 
     # context = "\nIn a shocking findin"
-    context = "\nHorizonRobotics"
+    context = "\nWhat is HorizonRobotics?"
+    # context = "\nWhat is Nvidia?"
     # context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 
     args = parse_args()

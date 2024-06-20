@@ -53,7 +53,7 @@ class HBOrtWrapper:
 
     def forward(self, _inputs: dict):
         assert len(self.inputs) == len(_inputs)
-        output_tensors = self.sess.run(None, _inputs)
+        output_tensors = self.sess.run_feature(None, _inputs)
 
         assert len(output_tensors) == len(self.output_names)
         output = dict()

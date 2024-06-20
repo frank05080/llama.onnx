@@ -23,5 +23,6 @@ Step2:
 
 ```
 bash model_to_oe.sh
+bash model_to_oe2.sh
 ```
 

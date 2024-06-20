@@ -15,7 +15,6 @@ if [ -d "$folder_name" ]; then
   if [ -f "$source_file" ]; then
     # Move and rename the file
     mv "$source_file" "$target_file"
-    mv "$target_file" "/home/ros/share_dir/gitrepos/llama.onnx/tools/models"
     echo "Moved and renamed $source_file to $target_file"
   else
     echo "Error: $source_file not found in $folder_name"
@@ -35,7 +34,6 @@ if [ -d "$folder_name" ]; then
   if [ -f "$source_file" ]; then
     # Move and rename the file
     mv "$source_file" "$target_file"
-    mv "$target_file" "/home/ros/share_dir/gitrepos/llama.onnx/tools/models"
     echo "Moved and renamed $source_file to $target_file"
   else
     echo "Error: $source_file not found in $folder_name"
@@ -60,7 +58,6 @@ do
     if [ -f "$source_file" ]; then
       # Move and rename the file
       mv "$source_file" "$target_file"
-      mv "$target_file" "/home/ros/share_dir/gitrepos/llama.onnx/tools/models"
       echo "Moved and renamed $source_file to $target_file"
     else
       echo "Error: $source_file not found in $folder_name"
