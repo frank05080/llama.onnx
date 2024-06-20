@@ -296,7 +296,7 @@ class RWKV_RNN(torch.jit.ScriptModule):
             # x = self.w.emb.weight[token]
             # x = self.layer_norm(x, self.w.blocks[0].ln0)
 
-            token = torch.full([1], tokenid) #, dtype=torch.int32) # param: size, fillvalue # shape: [1]
+            token = torch.full([1], tokenid, dtype=torch.int32) # param: size, fillvalue # shape: [1]
             # onnx_filepath = "models/embed.onnx"
             layer_name = "embed"
             onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))

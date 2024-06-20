@@ -10,7 +10,7 @@ from llama import sample_logits, OrtWrapper, HBOrtWrapper
 import argparse
 import os
 
-VERIFY_HB_ONNX = False
+VERIFY_HB_ONNX = True
 
 
 class RWKV_RNN():
@@ -30,7 +30,7 @@ class RWKV_RNN():
                 self.backbone.append(OrtWrapper(os.path.join(onnxdir, 'mixing_{}.onnx'.format(i))))
 
     def forward(self, token, state):
-        token = np.full((1), token)#, dtype=np.int32)
+        token = np.full((1), token, dtype=np.int32)
         x = self.embed.forward({'token': token})['output'] # x has shape [1024], dtype: torch.float32
 
         for i, node in enumerate(self.backbone): # state has shape: [120, 1024]
