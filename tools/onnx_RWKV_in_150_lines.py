@@ -50,7 +50,7 @@ LENGTH_PER_TRIAL = 50
 TEMPERATURE = 1.0
 TOP_P = 0.85
 CONVERT_FLOAT16 = False
-DUMP_INPUT = True
+DUMP_INPUT = True # if the models folder not exists, it will export onnx model too
 SAVE_ONLY = True
 
 
