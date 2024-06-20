@@ -17,7 +17,7 @@ class RWKV_RNN():
 
     def __init__(self, onnxdir: str, n_layer=24):
         if VERIFY_HB_ONNX:
-            self.embed = OrtWrapper(os.path.join(onnxdir, 'optimized_embed.onnx'))
+            self.embed = OrtWrapper(os.path.join(onnxdir, 'optimized_embed.onnx')) # hbort not support int32 input (only float and uint8)
             self.head = HBOrtWrapper(os.path.join(onnxdir, 'optimized_head.onnx'))
             self.backbone = []
             for i in range(n_layer):
