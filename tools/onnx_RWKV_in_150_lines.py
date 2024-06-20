@@ -21,14 +21,14 @@ from torch.nn import functional as F
 from tokenizers import Tokenizer
 
 
-model_folder_path = './tools/models'
+model_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/models'
 if not os.path.exists(model_folder_path):
     os.makedirs(model_folder_path)
     print(f'Folder created: {model_folder_path}')
 else:
     print(f'Folder already exists: {model_folder_path}')
     
-input_folder_path = './tools/inputs'
+input_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs'
 if not os.path.exists(input_folder_path):
     os.makedirs(input_folder_path)
     print(f'Folder created: {input_folder_path}')
@@ -51,6 +51,7 @@ TEMPERATURE = 1.0
 TOP_P = 0.85
 CONVERT_FLOAT16 = False
 DUMP_INPUT = True
+SAVE_ONLY = True
 
 
 ########################################################################################################
@@ -296,7 +297,6 @@ class RWKV_RNN(torch.jit.ScriptModule):
             # x = self.layer_norm(x, self.w.blocks[0].ln0)
 
             token = torch.full([1], tokenid, dtype=torch.int32) # param: size, fillvalue # shape: [1]
-
             # onnx_filepath = "models/embed.onnx"
             layer_name = "embed"
             onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
@@ -307,8 +307,7 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 # Save the numpy array to a .bin file
                 bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
                 np_onnx_input.tofile(bin_filepath)
-                print('ONNX input {} saved to'.format(bin_filepath))
-                    
+                print('ONNX input {} saved'.format(bin_filepath))
             if not os.path.exists(onnx_filepath): # if not exist, export onnx
                 onnx_inp_names = ["token"]
                 onnx_out_names = ["output"]
@@ -326,7 +325,6 @@ class RWKV_RNN(torch.jit.ScriptModule):
                     onnx_fp32_to_fp16(onnx_filepath)
 
             x = self.encoder.forward(token)
-
             for i in range(self.args.n_layer):
                 att = self.w.blocks[i].att
                 ln1 = self.w.blocks[i].ln1
@@ -356,9 +354,21 @@ class RWKV_RNN(torch.jit.ScriptModule):
                     ln2.bias,
                 )
                 state_slice = state[5 * i : 5 * (i + 1)]
-                onnx_filepath = "models/mixing_{}.onnx".format(i)
+                
+                layer_name = "mixing_{}".format(i)
+                onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
+                onnx_inputs = (x, state_slice) # x has shape: [1024], torch.float32, state_slice has shape: [5, 1024], torch.float32
+                # onnx_filepath = "models/mixing_{}.onnx".format(i)
+                
+                if DUMP_INPUT:
+                    # Convert the input tensor to a numpy array
+                    np_onnx_inputs = [inp.detach().cpu().numpy() for inp in onnx_inputs]
+                    for i, np_input in enumerate(np_onnx_inputs):
+                        bin_filepath = os.path.join(input_folder_path, '{}_input_{}.bin'.format(layer_name, i))
+                        np_input.tofile(bin_filepath)
+                        print('ONNX input {} saved'.format(bin_filepath))
+                
                 if not os.path.exists(onnx_filepath):
-                    onnx_inputs = (x, state_slice)
                     onnx_inp_names = ("input", "state_in")
                     onnx_out_names = ("output", "state_out")
                     torch.onnx.export(
@@ -389,7 +399,7 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 # Save the numpy array to a .bin file
                 bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
                 np_onnx_input.tofile(bin_filepath)
-                print('ONNX input {} saved to'.format(bin_filepath))
+                print('ONNX input {} saved'.format(bin_filepath))
             
             if not os.path.exists(onnx_filepath):
                 onnx_inp_names = ["x"]
@@ -408,10 +418,9 @@ class RWKV_RNN(torch.jit.ScriptModule):
                     onnx_fp32_to_fp16(onnx_filepath)
 
             x = self.decoder.forward(x)
-
-            # import pdb
-
-            # pdb.set_trace()
+            if SAVE_ONLY:
+                import pdb
+                pdb.set_trace()
             return x.float(), state
 
 
