@@ -33,37 +33,37 @@ class OrtWrapper:
         logger.debug('{} unload'.format(self.onnxfile))
         
 
-# # use horizon_bpu conda env
-# from horizon_tc_ui import HB_ONNXRuntime
+# use horizon_bpu conda env
+from horizon_tc_ui import HB_ONNXRuntime
 
 # def prepare_input_dict(input_names):
 #     feed_dict = dict()
 #     for input_name in input_names:
-        
+#         feed_dict[input_name] = data_prepare(input_name)
 
-# class HBOrtWrapper:
-#     def __init__(self, onnxfile: str):
-#         assert os.path.exists(onnxfile)
-#         self.onnxfile = onnxfile
-#         self.sess = HB_ONNXRuntime(onnxfile)
-#         self.inputs = self.sess.get_inputs()
-#         outputs = self.sess.get_outputs()
-#         self.output_names = [output.name for output in outputs]
-#         logger.debug('{} loaded'.format(onnxfile))
+class HBOrtWrapper:
+    def __init__(self, onnxfile: str):
+        assert os.path.exists(onnxfile)
+        self.onnxfile = onnxfile
+        self.sess = HB_ONNXRuntime(onnxfile)
+        self.inputs = self.sess.get_inputs()
+        outputs = self.sess.get_outputs()
+        self.output_names = [output.name for output in outputs]
+        logger.debug('{} loaded'.format(onnxfile))
 
-#     def forward(self, _inputs: dict):
-#         assert len(self.inputs) == len(_inputs)
-#         output_tensors = self.sess.run(None, _inputs)
+    def forward(self, _inputs: dict):
+        assert len(self.inputs) == len(_inputs)
+        output_tensors = self.sess.run(None, _inputs)
 
-#         assert len(output_tensors) == len(self.output_names)
-#         output = dict()
-#         for i, tensor in enumerate(output_tensors):
-#             output[self.output_names[i]] = tensor
+        assert len(output_tensors) == len(self.output_names)
+        output = dict()
+        for i, tensor in enumerate(output_tensors):
+            output[self.output_names[i]] = tensor
 
-#         return output
+        return output
     
-#     def __del__(self):
-#         logger.debug('{} unload'.format(self.onnxfile))
+    def __del__(self):
+        logger.debug('{} unload'.format(self.onnxfile))
 
 
 @singleton

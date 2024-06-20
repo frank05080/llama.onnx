@@ -296,14 +296,14 @@ class RWKV_RNN(torch.jit.ScriptModule):
             # x = self.w.emb.weight[token]
             # x = self.layer_norm(x, self.w.blocks[0].ln0)
 
-            token = torch.full([1], tokenid, dtype=torch.int32) # param: size, fillvalue # shape: [1]
+            token = torch.full([1], tokenid) #, dtype=torch.int32) # param: size, fillvalue # shape: [1]
             # onnx_filepath = "models/embed.onnx"
             layer_name = "embed"
             onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
             onnx_inputs = [token]
             if DUMP_INPUT:
                 # Convert the input tensor to a numpy array
-                np_onnx_input = onnx_inputs[0].detach().cpu().numpy() # int32
+                np_onnx_input = onnx_inputs[0].detach().cpu().numpy() # int64
                 # Save the numpy array to a .bin file
                 bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
                 np_onnx_input.tofile(bin_filepath)

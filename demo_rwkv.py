@@ -6,23 +6,32 @@ import numpy as np
 
 np.set_printoptions(precision=4, suppress=True, linewidth=200)
 from tokenizers import Tokenizer
-from llama import sample_logits, OrtWrapper
+from llama import sample_logits, OrtWrapper, HBOrtWrapper
 import argparse
 import os
+
+VERIFY_HB_ONNX = False
 
 
 class RWKV_RNN():
 
     def __init__(self, onnxdir: str, n_layer=24):
-        self.embed = OrtWrapper(os.path.join(onnxdir, 'embed.onnx'))
-        self.head = OrtWrapper(os.path.join(onnxdir, 'head.onnx'))
-        self.backbone = []
-        for i in range(n_layer):
-            self.backbone.append(OrtWrapper(os.path.join(onnxdir, 'mixing_{}.onnx'.format(i))))
+        if VERIFY_HB_ONNX:
+            self.embed = HBOrtWrapper(os.path.join(onnxdir, 'optimized_embed.onnx'))
+            self.head = HBOrtWrapper(os.path.join(onnxdir, 'optimized_head.onnx'))
+            self.backbone = []
+            for i in range(n_layer):
+                self.backbone.append(HBOrtWrapper(os.path.join(onnxdir, 'optimized_mixing_{}.onnx'.format(i))))
+        else:
+            self.embed = OrtWrapper(os.path.join(onnxdir, 'embed.onnx'))
+            self.head = OrtWrapper(os.path.join(onnxdir, 'head.onnx'))
+            self.backbone = []
+            for i in range(n_layer):
+                self.backbone.append(OrtWrapper(os.path.join(onnxdir, 'mixing_{}.onnx'.format(i))))
 
     def forward(self, token, state):
-        token = np.full((1), token, dtype=np.int32)
-        x = self.embed.forward({'token': token})['output']
+        token = np.full((1), token)#, dtype=np.int32)
+        x = self.embed.forward({'token': token})['output'] # x has shape [1024], dtype: torch.float32
 
         for i, node in enumerate(self.backbone): # state has shape: [120, 1024]
             state_in = state[5 * i:5 * i + 5] # state_in has shape [5, 1024]

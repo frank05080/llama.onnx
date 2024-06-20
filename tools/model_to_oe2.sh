@@ -12,7 +12,7 @@ do
   if [ -d "$folder_name" ]; then
     # Define the source file and target file names
     source_file="${folder_name}/optimized_float_model.onnx"
-    target_file="optimized_mixing${i}.onnx"
+    target_file="optimized_mixing_${i}.onnx"
     
     # Check if the source file exists
     if [ -f "$source_file" ]; then
