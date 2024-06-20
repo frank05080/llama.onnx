@@ -1,3 +1,6 @@
 __pycache__
 *.so
 *.bytecode
+
+HF-MODEL
+tools/models
