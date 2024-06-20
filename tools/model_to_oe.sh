@@ -1,3 +1,5 @@
+## do hb_mapper chekcer to every onnx model, output each folder
+
 #!/bin/bash
 cd models
 
