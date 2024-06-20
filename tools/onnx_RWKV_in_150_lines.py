@@ -7,10 +7,10 @@
 
 import numpy as np
 import os
-import shutil
+# import shutil
 import onnx
 import onnxsim
-import argparse
+# import argparse
 
 # from loguru import logger
 from onnxconverter_common import float16
@@ -20,12 +20,21 @@ import types, torch
 from torch.nn import functional as F
 from tokenizers import Tokenizer
 
-folder_path = './models'
-if not os.path.exists(folder_path):
-    os.makedirs(folder_path)
-    print(f'Folder created: {folder_path}')
+
+model_folder_path = './tools/models'
+if not os.path.exists(model_folder_path):
+    os.makedirs(model_folder_path)
+    print(f'Folder created: {model_folder_path}')
 else:
-    print(f'Folder already exists: {folder_path}')
+    print(f'Folder already exists: {model_folder_path}')
+    
+input_folder_path = './tools/inputs'
+if not os.path.exists(input_folder_path):
+    os.makedirs(input_folder_path)
+    print(f'Folder created: {input_folder_path}')
+else:
+    print(f'Folder already exists: {input_folder_path}')
+
 
 tokenizer = Tokenizer.from_file("/home/ros/share_dir/gitrepos/llama.onnx/rwkv/20B_tokenizer.json")
 
@@ -35,12 +44,14 @@ args.n_layer = 24
 args.n_embd = 1024
 
 # context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
-context = "地平线公司"
+context = "HorizonRobotics"
 NUM_TRIALS = 1
 LENGTH_PER_TRIAL = 50
 TEMPERATURE = 1.0
 TOP_P = 0.85
 CONVERT_FLOAT16 = False
+DUMP_INPUT = True
+
 
 ########################################################################################################
 
@@ -284,11 +295,21 @@ class RWKV_RNN(torch.jit.ScriptModule):
             # x = self.w.emb.weight[token]
             # x = self.layer_norm(x, self.w.blocks[0].ln0)
 
-            token = torch.full([1], tokenid, dtype=torch.int32)
+            token = torch.full([1], tokenid, dtype=torch.int32) # param: size, fillvalue # shape: [1]
 
-            onnx_filepath = "models/embed.onnx"
-            if not os.path.exists(onnx_filepath):
-                onnx_inputs = [token]
+            # onnx_filepath = "models/embed.onnx"
+            layer_name = "embed"
+            onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
+            onnx_inputs = [token]
+            if DUMP_INPUT:
+                # Convert the input tensor to a numpy array
+                np_onnx_input = onnx_inputs[0].detach().cpu().numpy() # int32
+                # Save the numpy array to a .bin file
+                bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
+                np_onnx_input.tofile(bin_filepath)
+                print('ONNX input {} saved to'.format(bin_filepath))
+                    
+            if not os.path.exists(onnx_filepath): # if not exist, export onnx
                 onnx_inp_names = ["token"]
                 onnx_out_names = ["output"]
                 torch.onnx.export(
@@ -357,9 +378,20 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 state[5 * i : 5 * (i + 1)] = state_out
 
 
-            onnx_filepath = "models/head.onnx"
+            # onnx_filepath = "models/head.onnx"
+            layer_name = "head"
+            onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
+            
+            onnx_inputs = [x] # shape: [1024], dtype: torch.float32
+            if DUMP_INPUT:
+                # Convert the input tensor to a numpy array
+                np_onnx_input = onnx_inputs[0].detach().cpu().numpy() # int32
+                # Save the numpy array to a .bin file
+                bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
+                np_onnx_input.tofile(bin_filepath)
+                print('ONNX input {} saved to'.format(bin_filepath))
+            
             if not os.path.exists(onnx_filepath):
-                onnx_inputs = [x]
                 onnx_inp_names = ["x"]
                 onnx_out_names = ["output"]
                 torch.onnx.export(

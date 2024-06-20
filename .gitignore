@@ -4,3 +4,4 @@ __pycache__
 
 HF-MODEL
 tools/models
+tools/inputs
