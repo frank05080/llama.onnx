@@ -385,7 +385,7 @@ class RWKV_RNN(torch.jit.ScriptModule):
             onnx_inputs = [x] # shape: [1024], dtype: torch.float32
             if DUMP_INPUT:
                 # Convert the input tensor to a numpy array
-                np_onnx_input = onnx_inputs[0].detach().cpu().numpy() # int32
+                np_onnx_input = onnx_inputs[0].detach().cpu().numpy()
                 # Save the numpy array to a .bin file
                 bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
                 np_onnx_input.tofile(bin_filepath)
