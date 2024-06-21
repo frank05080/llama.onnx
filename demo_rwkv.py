@@ -41,7 +41,8 @@ class RWKV_RNN():
             state[5 * i:5 * i + 5] = out['state_out']
 
         # return self.head.forward({'x': x.astype(np.float16)})['output'], state
-        return self.head.forward({'x': x.astype(np.float32)})['output'], state
+        head_out = self.head.forward({'x': x.astype(np.float32)})['output'] # x is ndarray of shape (1024,), dtype: float32
+        return head_out, state # head_out has shape: (50277,), state has shape (120, 1024)
 
 
 def parse_args():

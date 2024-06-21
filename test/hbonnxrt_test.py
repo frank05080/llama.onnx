@@ -1,10 +1,13 @@
 import numpy as np
+import torch
 # 加载地平线依赖库
 from horizon_tc_ui import HB_ONNXRuntime
+
 # 准备模型运行的输入, 生成形状为 (1,) 的 int32 数据
 input_data = np.random.randint(low=0, high=100, size=(1,), dtype=np.int32)
+# input_data = torch.full([1], 25555, dtype=torch.int32).numpy()
 # 加载模型文件
-sess = HB_ONNXRuntime(model_file = "optimized_embed.onnx")
+sess = HB_ONNXRuntime(model_file = "/home/ros/share_dir/gitrepos/llama.onnx/tools/models/optimized_embed.onnx")
 # 获取模型输入&输出节点信息
 input_names = sess.input_names
 output_names = sess.output_names

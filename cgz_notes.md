@@ -28,4 +28,6 @@ bash model_to_oe2.sh
 
 Step3:
 
+maybe: cd bpu_convert_yaml, bash create_yaml.sh
+
 hb_mapper makertbin --config /home/ros/share_dir/gitrepos/llama.onnx/bpu_convert_yaml/rwkv_mixing_0_config.yaml --model-type onnx

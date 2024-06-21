@@ -30,7 +30,7 @@ model_parameters:
   # 模型转换输出的用于上板执行的模型文件的名称前缀
   # -----------------------------------------------------------------------------------------
   # model conversion generated name prefix of those model files used for dev board execution
-  output_model_file_prefix: 'rwkv_mixing0'
+  output_model_file_prefix: 'rwkv_mixing_0'
 
   # 模型转换输出的结果的存放目录
   # -----------------------------------------------------------
