@@ -28,7 +28,7 @@ if not os.path.exists(model_folder_path):
 else:
     print(f'Folder already exists: {model_folder_path}')
     
-input_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs'
+input_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs5'
 if not os.path.exists(input_folder_path):
     os.makedirs(input_folder_path)
     print(f'Folder created: {input_folder_path}')
@@ -43,8 +43,12 @@ args.MODEL_NAME = "/home/ros/share_dir/gitrepos/llama.onnx/HF-MODEL/rwkv-4-pile-
 args.n_layer = 24
 args.n_embd = 1024
 
-# context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
-context = "HorizonRobotics"
+# context = "HorizonRobotics"
+# context = "Nvidia is"
+# context = "Robotics and AI"
+# context = "What is Nvidia"
+# context = "\nIn a shocking finding"
+context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 NUM_TRIALS = 1
 LENGTH_PER_TRIAL = 50
 TEMPERATURE = 1.0
@@ -323,6 +327,8 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 )
                 if CONVERT_FLOAT16:
                     onnx_fp32_to_fp16(onnx_filepath)
+            else:
+                print("onnx file path {} exists..".format(onnx_filepath))
 
             x = self.encoder.forward(token)
             for i in range(self.args.n_layer):
@@ -383,6 +389,8 @@ class RWKV_RNN(torch.jit.ScriptModule):
                     )
                     if CONVERT_FLOAT16:
                         onnx_fp32_to_fp16(onnx_filepath)
+                else:
+                    print("onnx file path {} exists..".format(onnx_filepath))
 
                 x, state_out = mixer.forward(x, state_slice)
                 state[5 * i : 5 * (i + 1)] = state_out
@@ -416,6 +424,8 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 )
                 if CONVERT_FLOAT16:
                     onnx_fp32_to_fp16(onnx_filepath)
+            else:
+                print("onnx file path {} exists..".format(onnx_filepath))
 
             x = self.decoder.forward(x)
             if SAVE_ONLY:

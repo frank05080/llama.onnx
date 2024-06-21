@@ -34,7 +34,7 @@ class RWKV_RNN():
         x = self.embed.forward({'token': token})['output'] # x has shape [1024], dtype: torch.float32
 
         for i, node in enumerate(self.backbone): # state has shape: [120, 1024]
-            state_in = state[5 * i:5 * i + 5] # state_in has shape [5, 1024]
+            state_in = state[5 * i:5 * i + 5] # state_in has shape [5, 1024], dtype: float32
             # out = node.forward({'input': x.astype(np.float16), 'state_in': state_in})
             out = node.forward({'input': x.astype(np.float32), 'state_in': state_in})
             x = out['output']

@@ -6,3 +6,11 @@ HF-MODEL
 tools/models
 tools/models_bak
 tools/inputs
+tools/input_calib_mixing_0_input/
+tools/input_calib_mixing_0_state_in/
+tools/inputs0/
+tools/inputs1/
+tools/inputs2/
+tools/inputs3/
+tools/inputs4/
+tools/inputs5/
