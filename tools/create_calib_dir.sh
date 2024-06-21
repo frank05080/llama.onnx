@@ -3,8 +3,15 @@
 # Define source directory
 src_dir="inputs0"
 
-# dst_dir_0="input_calib_head_input"
+### Create head calib dir
+dst_dir="input_calib_head_x"
+mkdir -p "$dst_dir"
+file0="${src_dir}/head_input.bin"
+if [ -e "$file0" ]; then
+  cp "$file0" "${dst_dir}/"
+fi
 
+### Create mixings calib dir
 # Loop through all files in the source directory
 for i in {0..23}; do
   # Define destination directories based on the current index

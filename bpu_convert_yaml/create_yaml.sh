@@ -1,5 +1,8 @@
 #!/bin/bash
 
+### Only Create "rwkv_mixing_xx_config.yaml" based on "rwkv_mixing_0_config.yaml"
+### Still need to create "rwkv_head_config.yaml" yourself
+
 # Base configuration file
 base_config="rwkv_mixing_0_config.yaml"
 
