@@ -8,6 +8,9 @@
 
 #include "dnn/hb_dnn.h"
 
+int INPUT_MODE = 0;
+int OUTPUT_MODE = 1;
+
 bool check_ret(int32_t ret)
 {
     if (ret != 0)
@@ -18,34 +21,58 @@ bool check_ret(int32_t ret)
     return true;
 }
 
-void checkTensorProperties(hbDNNTensor tensor){
+void checkTensorProperties(hbDNNTensor tensor)
+{
     std::cout << "### start prop check: " << std::endl;
     std::cout << "tensor has type: " << tensor.properties.tensorType << std::endl;
     std::cout << "prop.tensorLayout: " << tensor.properties.tensorLayout << std::endl;
     std::cout << "validShape numDimensions: " << tensor.properties.validShape.numDimensions << std::endl;
-    for (int j = 0; j < tensor.properties.validShape.numDimensions; ++j) {
+    for (int j = 0; j < tensor.properties.validShape.numDimensions; ++j)
+    {
         std::cout << "dimensionSize[" << j << "]: " << tensor.properties.validShape.dimensionSize[j] << std::endl;
     }
     std::cout << "alignedShape numDimensions: " << tensor.properties.alignedShape.numDimensions << std::endl;
-    for (int j = 0; j < tensor.properties.alignedShape.numDimensions; ++j) {
+    for (int j = 0; j < tensor.properties.alignedShape.numDimensions; ++j)
+    {
         std::cout << "dimensionSize[" << j << "]: " << tensor.properties.alignedShape.dimensionSize[j] << std::endl;
     }
 }
 
-int prepare_tensor(hbDNNTensor *input_tensors, hbDNNTensor *output_tensor, hbDNNHandle_t dnn_handle, int input_count, int output_count)
+void applyTensorMem(hbDNNTensor *tensors, int count, hbDNNHandle_t dnn_handle, int mode)
+{
+    auto ret = -1;
+    for (int i = 0; i < count; i++)
+    {
+        if (mode == INPUT_MODE)
+        {
+            ret = hbDNNGetInputTensorProperties(&tensors[i].properties, dnn_handle, i); // get input_tensors[0]'s ptr
+        }
+        else
+        {
+            ret = hbDNNGetOutputTensorProperties(&tensors[i].properties, dnn_handle, i);
+        }
+        check_ret(ret);
+        checkTensorProperties(tensors[i]);
+        int input_memSize = tensors[i].properties.alignedByteSize;
+        std::cout << "input_memSize: " << input_memSize << std::endl;
+        ret = hbSysAllocCachedMem(&tensors[i].sysMem[0], input_memSize);
+        check_ret(ret);
+    }
+}
+
+int prepare_tensor(hbDNNTensor *input_tensors, hbDNNTensor *output_tensors, hbDNNHandle_t dnn_handle, int input_count, int output_count)
 {
     hbDNNTensor *inputs = input_tensors;
     // auto prop = input_tensors[0].properties; // get default value of properties.
     // std::cout << prop.tensorLayout << std::endl;
-    auto ret = -1;
-    for(int i=0; i<input_count; i++) {
-        ret = hbDNNGetInputTensorProperties(&inputs[i].properties, dnn_handle, i); // get input_tensors[0]'s ptr
-        check_ret(ret);
-        checkTensorProperties(inputs[i]);
-        int input_memSize = inputs[i].properties.alignedByteSize;
-        ret = hbSysAllocCachedMem(&inputs[i].sysMem[0], input_memSize);
-        check_ret(ret);
-    }
+    applyTensorMem(inputs, input_count, dnn_handle, INPUT_MODE);
+    hbDNNTensor *outputs = output_tensors;
+    applyTensorMem(outputs, output_count, dnn_handle, OUTPUT_MODE);
+}
+
+bool read_inputs(std::string &input_file, hbDNNTensor *input_tensor)
+{
+    // TODO
 }
 
 int main(int argc, char **argv)
@@ -70,7 +97,7 @@ int main(int argc, char **argv)
     ret = hbDNNGetModelHandle(&dnn_handle, packed_dnn_handle, model_name_list[0]);
     check_ret(ret);
 
-    // // 2. 获取input/output信息
+    // 2. 获取input/output信息
     std::vector<hbDNNTensor> input_tensors;
     std::vector<hbDNNTensor> output_tensors;
 
@@ -86,6 +113,6 @@ int main(int argc, char **argv)
     output_tensors.resize(output_count);
 
     prepare_tensor(input_tensors.data(), output_tensors.data(), dnn_handle, input_count, output_count);
-    
+
     return 0;
 }
