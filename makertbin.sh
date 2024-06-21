@@ -21,7 +21,7 @@ mv "/home/ros/share_dir/gitrepos/llama.onnx/hb_mapper_makertbin.log" "${dst_dir}
 ###############################################
 
 # Loop through mixing_0 to mixing_23
-for i in {0..1}; do
+for i in {0..23}; do
   # Construct the config file name
   config_file="${config_path}/rwkv_mixing_${i}_config.yaml"
   # Construct and run the full command
