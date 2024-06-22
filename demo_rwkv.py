@@ -59,8 +59,8 @@ def main():
     tokenizer = Tokenizer.from_file("rwkv/20B_tokenizer.json")
 
     # context = "\nIn a shocking findin"
-    context = "\nWhat is HorizonRobotics?"
-    # context = "\nWhat is Nvidia?"
+    # context = "\nWhat is HorizonRobotics?"
+    context = "\nWhat is Nvidia?"
     # context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 
     args = parse_args()

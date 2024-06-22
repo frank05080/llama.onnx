@@ -1,40 +1,20 @@
-## Generate RWKV onnx model, prepare the models folder
-## bpu supports only opset 10/11, downgrade from 16 to 11, and now it corresponds to ir version of 6
-
 ########################################################################################################
 # The RWKV Language Model - https://github.com/BlinkDL/RWKV-LM
 ########################################################################################################
 
 import numpy as np
 import os
-# import shutil
+import shutil
 import onnx
 import onnxsim
-# import argparse
-
-# from loguru import logger
+import argparse
+from loguru import logger
 from onnxconverter_common import float16
 
 np.set_printoptions(precision=4, suppress=True, linewidth=200)
 import types, torch
 from torch.nn import functional as F
 from tokenizers import Tokenizer
-
-
-model_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/models'
-if not os.path.exists(model_folder_path):
-    os.makedirs(model_folder_path)
-    print(f'Folder created: {model_folder_path}')
-else:
-    print(f'Folder already exists: {model_folder_path}')
-    
-input_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs5'
-if not os.path.exists(input_folder_path):
-    os.makedirs(input_folder_path)
-    print(f'Folder created: {input_folder_path}')
-else:
-    print(f'Folder already exists: {input_folder_path}')
-
 
 tokenizer = Tokenizer.from_file("/home/ros/share_dir/gitrepos/llama.onnx/rwkv/20B_tokenizer.json")
 
@@ -43,20 +23,12 @@ args.MODEL_NAME = '/home/ros/share_dir/gitrepos/llama.onnx/HF-MODEL/rwkv-4-pile-
 args.n_layer = 24
 args.n_embd = 1024
 
-# context = "HorizonRobotics"
-# context = "Nvidia is"
-# context = "Robotics and AI"
 context = "\nWhat is Nvidia?"
-# context = "\nIn a shocking finding"
 # context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
-NUM_TRIALS = 1
-LENGTH_PER_TRIAL = 50
+NUM_TRIALS = 3
+LENGTH_PER_TRIAL = 100
 TEMPERATURE = 1.0
 TOP_P = 0.85
-CONVERT_FLOAT16 = False
-DUMP_INPUT = True # if the models folder not exists, it will export onnx model too # used to generate inputs{i} folder in tools
-SAVE_ONLY = False # only save, dont care outputs
-
 
 ########################################################################################################
 
@@ -300,157 +272,51 @@ class RWKV_RNN(torch.jit.ScriptModule):
             # x = self.layer_norm(x, self.w.blocks[0].ln0)
 
             token = torch.full([1], tokenid, dtype=torch.int32) # param: size, fillvalue # shape: [1]
-            
-            
-            #### Start Export ONNX and dump data
-            # onnx_filepath = "models/embed.onnx"
-            layer_name = "embed"
-            onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
-            onnx_inputs = [token]
-            if DUMP_INPUT:
-                # Convert the input tensor to a numpy array
-                np_onnx_input = onnx_inputs[0].detach().cpu().numpy() # int64
-                # Save the numpy array to a .bin file
-                bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
-                np_onnx_input.tofile(bin_filepath)
-                if SAVE_ONLY:
-                    print('ONNX input {} saved'.format(bin_filepath))
-            if not os.path.exists(onnx_filepath): # if not exist, export onnx
-                onnx_inp_names = ["token"]
-                onnx_out_names = ["output"]
-                torch.onnx.export(
-                    model=self.encoder,
-                    args=onnx_inputs,
-                    f=onnx_filepath,
-                    verbose=False,
-                    input_names=onnx_inp_names,
-                    output_names=onnx_out_names,
-                    # opset_version=16,
-                    opset_version=11,
-                )
-                if CONVERT_FLOAT16:
-                    onnx_fp32_to_fp16(onnx_filepath)
-            else:
-                if SAVE_ONLY:
-                    print("onnx file path {} exists..".format(onnx_filepath))
-            #### End Export ONNX and dump data
-            
+
+            # onnx_inputs = [token]
+            # onnx_filepath = 'models/embed.onnx'
+            # onnx_inp_names = ['token']
+            # onnx_out_names = ['output']
+            # torch.onnx.export(model=self.encoder, args=onnx_inputs, f=onnx_filepath, verbose=False, input_names=onnx_inp_names, output_names=onnx_out_names, opset_version=16)
+            # onnx_fp32_to_fp16(onnx_filepath)
 
             x = self.encoder.forward(token)
+
             for i in range(self.args.n_layer):
+
                 att = self.w.blocks[i].att
                 ln1 = self.w.blocks[i].ln1
+
                 ffn = self.w.blocks[i].ffn
                 ln2 = self.w.blocks[i].ln2
+
                 mixer = Mixer()
-                mixer.set_attn(
-                    att.time_mix_k,
-                    att.time_mix_v,
-                    att.time_mix_r,
-                    att.time_first,
-                    att.time_decay,
-                    att.key.weight,
-                    att.value.weight,
-                    att.receptance.weight,
-                    att.output.weight,
-                    ln1.weight,
-                    ln1.bias,
-                )
-                mixer.set_ffn(
-                    ffn.time_mix_k,
-                    ffn.time_mix_r,
-                    ffn.key.weight,
-                    ffn.value.weight,
-                    ffn.receptance.weight,
-                    ln2.weight,
-                    ln2.bias,
-                )
+                mixer.set_attn(att.time_mix_k, att.time_mix_v, att.time_mix_r, att.time_first, att.time_decay, att.key.weight, att.value.weight, att.receptance.weight, att.output.weight, ln1.weight, ln1.bias)
+                mixer.set_ffn(ffn.time_mix_k, ffn.time_mix_r, ffn.key.weight, ffn.value.weight, ffn.receptance.weight, ln2.weight, ln2.bias)
+               
                 state_slice = state[5*i : 5*(i+1)]
-                
-            
-                #### Start Export ONNX and dump data
-                layer_name = "mixing_{}".format(i)
-                onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
-                onnx_inputs = (x, state_slice) # x has shape: [1024], torch.float32, state_slice has shape: [5, 1024], torch.float32
-                # onnx_filepath = "models/mixing_{}.onnx".format(i)
-                
-                if DUMP_INPUT:
-                    # Convert the input tensor to a numpy array
-                    np_onnx_inputs = [inp.detach().cpu().numpy() for inp in onnx_inputs]
-                    for j, np_input in enumerate(np_onnx_inputs): # BUG!! CANT USE i HERE, it will disturb the i index above
-                        bin_filepath = os.path.join(input_folder_path, '{}_input_{}.bin'.format(layer_name, j))
-                        np_input.tofile(bin_filepath)
-                        if SAVE_ONLY:
-                            print('ONNX input {} saved'.format(bin_filepath))
-                
-                if not os.path.exists(onnx_filepath):
-                    onnx_inp_names = ("input", "state_in")
-                    onnx_out_names = ("output", "state_out")
-                    torch.onnx.export(
-                        model=mixer,
-                        args=onnx_inputs,
-                        f=onnx_filepath,
-                        verbose=False,
-                        input_names=onnx_inp_names,
-                        output_names=onnx_out_names,
-                        # opset_version=16,
-                        opset_version=11,
-                    )
-                    if CONVERT_FLOAT16:
-                        onnx_fp32_to_fp16(onnx_filepath)
-                else:
-                    if SAVE_ONLY:
-                        print("onnx file path {} exists..".format(onnx_filepath))
-                #### End Export ONNX and dump data
+
+                # onnx_inputs = (x, state_slice)
+                # onnx_filepath = 'models/mixing_{}.onnx'.format(i)
+                # onnx_inp_names = ('input', 'state_in')
+                # onnx_out_names = ('output', 'state_out')
+                # torch.onnx.export(model=mixer, args=onnx_inputs, f=onnx_filepath, verbose=False, input_names=onnx_inp_names, output_names=onnx_out_names, opset_version=16)
+                # onnx_fp32_to_fp16(onnx_filepath)
 
                 x, state_out = mixer.forward(x, state_slice)
                 state[5*i:5*(i+1)] = state_out
 
-
-            #### Start Export ONNX and dump data
-            # onnx_filepath = "models/head.onnx"
-            layer_name = "head"
-            onnx_filepath = os.path.join(model_folder_path, '{}.onnx'.format(layer_name))
-            
-            onnx_inputs = [x] # shape: [1024], dtype: torch.float32
-            if DUMP_INPUT:
-                # Convert the input tensor to a numpy array
-                np_onnx_input = onnx_inputs[0].detach().cpu().numpy()
-                # Save the numpy array to a .bin file
-                bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
-                np_onnx_input.tofile(bin_filepath)
-                if SAVE_ONLY:
-                    print('ONNX input {} saved'.format(bin_filepath))
-                ### test_acc
-                data = np.fromfile("/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs5/head_input.bin", dtype=np.float32)
-                if SAVE_ONLY:
-                    print(data.shape)
-            
-            if not os.path.exists(onnx_filepath):
-                onnx_inp_names = ["x"]
-                onnx_out_names = ["output"]
-                torch.onnx.export(
-                    model=self.decoder,
-                    args=onnx_inputs,
-                    f=onnx_filepath,
-                    verbose=False,
-                    input_names=onnx_inp_names,
-                    output_names=onnx_out_names,
-                    # opset_version=16,
-                    opset_version=11,
-                )
-                if CONVERT_FLOAT16:
-                    onnx_fp32_to_fp16(onnx_filepath)
-            else:
-                if SAVE_ONLY:
-                    print("onnx file path {} exists..".format(onnx_filepath))
-            #### End Export ONNX and dump data
-            
+            # onnx_inputs = [x]
+            # onnx_filepath = 'models/head.onnx'
+            # onnx_inp_names = ['x']
+            # onnx_out_names = ['output']
+            # torch.onnx.export(model=self.decoder, args=onnx_inputs, f=onnx_filepath, verbose=False, input_names=onnx_inp_names, output_names=onnx_out_names, opset_version=16)
+            # onnx_fp32_to_fp16(onnx_filepath)
 
             x = self.decoder.forward(x)
-            if SAVE_ONLY:
-                import pdb
-                pdb.set_trace()
+
+            # import pdb
+            # pdb.set_trace()
             return x.float(), state
 
 
@@ -472,22 +338,20 @@ def sample_logits(out, temperature=1.0, top_p=0.8):
 
 ########################################################################################################
 
-print(f"\nUsing CPU. Loading {args.MODEL_NAME} ...")
+print(f'\nUsing CPU. Loading {args.MODEL_NAME} ...')
 model = RWKV_RNN(args)
 
-print(f"\nPreprocessing context (slow version. see v2/rwkv/model.py for fast version)")
+print(f'\nPreprocessing context (slow version. see v2/rwkv/model.py for fast version)')
 
 init_state = torch.zeros(args.n_layer * 5, args.n_embd)
 for i in range(args.n_layer):
     init_state[5 * i + 4] = -1e30  # -infinity
 
-print("Enter warm-up")
 for token in tokenizer.encode(context).ids:
     init_out, init_state = model.forward(token, init_state)
-print("Finish warm-up")
 
 for TRIAL in range(NUM_TRIALS):
-    print(f"\n\n--[ Trial {TRIAL} ]-----------------", context, end="")
+    print(f'\n\n--[ Trial {TRIAL} ]-----------------', context, end="")
     all_tokens = []
     out_last = 0
     out, state = init_out.clone(), init_state.clone()
@@ -495,8 +359,8 @@ for TRIAL in range(NUM_TRIALS):
         token = sample_logits(out, TEMPERATURE, TOP_P)
         all_tokens += [token]
         tmp = tokenizer.decode(all_tokens[out_last:])
-        if "\ufffd" not in tmp:  # only print when we have a valid utf-8 string
+        if '\ufffd' not in tmp:  # only print when we have a valid utf-8 string
             print(tmp, end="", flush=True)
             out_last = i + 1
         out, state = model.forward(token, state)
-print("\n")
+print('\n')
