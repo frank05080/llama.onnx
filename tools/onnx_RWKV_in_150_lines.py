@@ -408,6 +408,9 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 bin_filepath = os.path.join(input_folder_path, '{}_input.bin'.format(layer_name))
                 np_onnx_input.tofile(bin_filepath)
                 print('ONNX input {} saved'.format(bin_filepath))
+                ### test_acc
+                data = np.fromfile("/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs5/head_input.bin", dtype=np.float32)
+                print(data.shape)
             
             if not os.path.exists(onnx_filepath):
                 onnx_inp_names = ["x"]
