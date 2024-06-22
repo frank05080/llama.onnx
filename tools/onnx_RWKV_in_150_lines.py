@@ -21,14 +21,14 @@ from torch.nn import functional as F
 from tokenizers import Tokenizer
 
 
-model_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/models'
+model_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/data/pt2onnx_models'
 if not os.path.exists(model_folder_path):
     os.makedirs(model_folder_path)
     print(f'Folder created: {model_folder_path}')
 else:
     print(f'Folder already exists: {model_folder_path}')
     
-input_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs5'
+input_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/data/ptdumped_inputs'
 if not os.path.exists(input_folder_path):
     os.makedirs(input_folder_path)
     print(f'Folder created: {input_folder_path}')

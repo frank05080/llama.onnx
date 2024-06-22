@@ -13,7 +13,7 @@ cd tools
 python3 onnx_RWKV_in_150_lines.py
 ```
 
-remove models folder
+to reuse it and export onnx models, remove models folder
 set:
 CONVERT_FLOAT16 = False
 DUMP_INPUT = True

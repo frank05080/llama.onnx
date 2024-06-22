@@ -8,3 +8,4 @@ tools/models_bak
 tools/inputs*
 tools/input_calib_*
 bpu_convert_yaml/model_convert_output_rwkv*
+data
