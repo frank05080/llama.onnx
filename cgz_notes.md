@@ -30,8 +30,8 @@ python3 demo_rwkv.py (revise onnxdir param and VERIFY_HB_ONNX)
 
 Step3:
 
-maybe: cd bpu_convert_yaml, bash create_yaml.sh
-
 bash create_calib_dir.sh
+
+maybe: cd bpu_convert_yaml, bash create_yaml.sh
 
 bash makertbin.sh
