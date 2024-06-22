@@ -26,6 +26,8 @@ bash model_to_oe.sh
 bash model_to_oe2.sh
 ```
 
+python3 demo_rwkv.py (revise onnxdir param and VERIFY_HB_ONNX)
+
 Step3:
 
 maybe: cd bpu_convert_yaml, bash create_yaml.sh

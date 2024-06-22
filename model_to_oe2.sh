@@ -1,68 +1,37 @@
-## move the optimized model out
+## Gather hb_check models together
 
 #!/bin/bash
-cd models
 
-# Format the folder name
-folder_name="embed"
+model_assign="optimized_float"
 
-# Check if the folder exists
-if [ -d "$folder_name" ]; then
-  # Define the source file and target file names
-  source_file="${folder_name}/optimized_float_model.onnx"
-  target_file="optimized_${folder_name}.onnx"
-  # Check if the source file exists
-  if [ -f "$source_file" ]; then
-    # Move and rename the file
-    mv "$source_file" "$target_file"
-    echo "Moved and renamed $source_file to $target_file"
-  else
-    echo "Error: $source_file not found in $folder_name"
-  fi
-else
-  echo "Error: Folder $folder_name not found"
+# Base directory where subfolders are located
+base_dir="/home/ros/share_dir/gitrepos/llama.onnx/data/hb_check_result"
+
+# Destination base directory
+dest_base_dir="/home/ros/share_dir/gitrepos/llama.onnx/data"
+
+goal_dir="${dest_base_dir}/hb_check_${model_assign}_models"
+mkdir ${goal_dir}
+
+onnx_file="${base_dir}/embed_hb_check_results/${model_assign}_model.onnx"
+if [ -f "${onnx_file}" ]; then
+    cp "${onnx_file}" "${goal_dir}/embed.onnx"
 fi
 
-folder_name="head"
-
-# Check if the folder exists
-if [ -d "$folder_name" ]; then
-  # Define the source file and target file names
-  source_file="${folder_name}/optimized_float_model.onnx"
-  target_file="optimized_${folder_name}.onnx"
-  # Check if the source file exists
-  if [ -f "$source_file" ]; then
-    # Move and rename the file
-    mv "$source_file" "$target_file"
-    echo "Moved and renamed $source_file to $target_file"
-  else
-    echo "Error: $source_file not found in $folder_name"
-  fi
-else
-  echo "Error: Folder $folder_name not found"
+onnx_file="${base_dir}/head_hb_check_results/${model_assign}_model.onnx"
+if [ -f "${onnx_file}" ]; then
+    cp "${onnx_file}" "${goal_dir}/head.onnx"
 fi
 
-# Loop from 0 to 23
-for i in {0..23}
-do
-  # Format the folder name
-  folder_name="mixing_${i}"
-  
-  # Check if the folder exists
-  if [ -d "$folder_name" ]; then
-    # Define the source file and target file names
-    source_file="${folder_name}/optimized_float_model.onnx"
-    target_file="optimized_mixing_${i}.onnx"
+# Loop over all subfolders
+for i in {0..23}; do
+    subfolder="${base_dir}/mixing_${i}_hb_check_results"
     
-    # Check if the source file exists
-    if [ -f "$source_file" ]; then
-      # Move and rename the file
-      mv "$source_file" "$target_file"
-      echo "Moved and renamed $source_file to $target_file"
-    else
-      echo "Error: $source_file not found in $folder_name"
-    fi
-  else
-    echo "Error: Folder $folder_name not found"
-  fi
+    for onnx_file in ${subfolder}/${model_assign}_model.onnx; do
+        if [ -f "${onnx_file}" ]; then
+            cp "${onnx_file}" "${goal_dir}/mixing_${i}.onnx"
+        fi
+    done
 done
+
+echo "All .onnx files have been copied to their respective folders."

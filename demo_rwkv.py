@@ -10,18 +10,18 @@ from llama import sample_logits, OrtWrapper, HBOrtWrapper
 import argparse
 import os
 
-VERIFY_HB_ONNX = True
+VERIFY_HB_ONNX = False
 
 
 class RWKV_RNN():
 
-    def __init__(self, onnxdir: str, n_layer=24):
+    def __init__(self, onnxdir: str, hb_onnxdir: str, n_layer=24):
         if VERIFY_HB_ONNX:
             self.embed = OrtWrapper(os.path.join(onnxdir, 'embed.onnx')) # hbort not support int32 input (only float and uint8)
-            self.head = HBOrtWrapper(os.path.join(onnxdir, 'optimized_head.onnx'))
+            self.head = HBOrtWrapper(os.path.join(hb_onnxdir, 'head.onnx'))
             self.backbone = []
             for i in range(n_layer):
-                self.backbone.append(HBOrtWrapper(os.path.join(onnxdir, 'optimized_mixing_{}.onnx'.format(i))))
+                self.backbone.append(HBOrtWrapper(os.path.join(hb_onnxdir, 'mixing_{}.onnx'.format(i))))
         else:
             self.embed = OrtWrapper(os.path.join(onnxdir, 'embed.onnx'))
             self.head = OrtWrapper(os.path.join(onnxdir, 'head.onnx'))
@@ -47,7 +47,8 @@ class RWKV_RNN():
 
 def parse_args():
     parser = argparse.ArgumentParser(description='rwkv.onnx onnxruntime demo')
-    parser.add_argument('--onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/tools/models", help='rwkv onnx model directory.')
+    parser.add_argument('--onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/data/pt2onnx_models", help='rwkv onnx model directory.')
+    parser.add_argument('--hb_onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/data/hb_check_optimized_float_models", help='rwkv onnx model directory.')
     parser.add_argument('--length', type=int, default=20, help='max output length.')
     parser.add_argument('--n_layer', type=int, default=24, help='layer number, use 24 by default.')
     parser.add_argument('--n_embd', type=int, default=1024, help='embedding length, use 1024 by default.')
@@ -64,7 +65,7 @@ def main():
     # context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 
     args = parse_args()
-    model = RWKV_RNN(args.onnxdir, n_layer=args.n_layer)
+    model = RWKV_RNN(args.onnxdir, args.hb_onnxdir, n_layer=args.n_layer)
 
     # state = np.zeros((args.n_layer * 5, args.n_embd), dtype=np.float16)
     state = np.zeros((args.n_layer * 5, args.n_embd), dtype=np.float32)
