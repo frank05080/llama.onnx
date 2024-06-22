@@ -32,6 +32,6 @@ Step3:
 
 bash create_calib_dir.sh
 
-maybe: cd bpu_convert_yaml, bash create_yaml.sh
+maybe: cd bpu_convert_yaml, bash create_yaml.sh + manually revise rwkv_head_config.yaml
 
 bash makertbin.sh

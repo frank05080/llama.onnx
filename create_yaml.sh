@@ -4,7 +4,7 @@
 ### Still need to create "rwkv_head_config.yaml" yourself
 
 # Base configuration file
-base_config="rwkv_mixing_0_config.yaml"
+base_config="/home/ros/share_dir/gitrepos/llama.onnx/bpu_convert_yaml/rwkv_mixing_0_config.yaml"
 
 # Check if the base configuration file exists
 if [ ! -f "$base_config" ]; then
@@ -13,10 +13,10 @@ if [ ! -f "$base_config" ]; then
 fi
 
 # Loop from 2 to 23
-for i in {2..23}
+for i in {1..23}
 do
   # Format the new configuration filename
-  new_config="rwkv_mixing_${i}_config.yaml"
+  new_config="/home/ros/share_dir/gitrepos/llama.onnx/bpu_convert_yaml/rwkv_mixing_${i}_config.yaml"
   
   # Copy the base configuration file to the new file
   cp "$base_config" "$new_config"

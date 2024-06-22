@@ -54,7 +54,7 @@ LENGTH_PER_TRIAL = 50
 TEMPERATURE = 1.0
 TOP_P = 0.85
 CONVERT_FLOAT16 = False
-DUMP_INPUT = True # if the models folder not exists, it will export onnx model too # used to generate inputs{i} folder in tools
+DUMP_INPUT = False # if the models folder not exists, it will export onnx model too # used to generate inputs{i} folder in tools
 SAVE_ONLY = False # only save, dont care outputs
 
 
@@ -422,8 +422,9 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 if SAVE_ONLY:
                     print('ONNX input {} saved'.format(bin_filepath))
                 ### test_acc
-                data = np.fromfile("/home/ros/share_dir/gitrepos/llama.onnx/tools/inputs5/head_input.bin", dtype=np.float32)
+                data = np.fromfile(bin_filepath, dtype=np.float32)
                 if SAVE_ONLY:
+                    print("data\n", data)
                     print(data.shape)
             
             if not os.path.exists(onnx_filepath):
@@ -478,8 +479,8 @@ model = RWKV_RNN(args)
 print(f"\nPreprocessing context (slow version. see v2/rwkv/model.py for fast version)")
 
 init_state = torch.zeros(args.n_layer * 5, args.n_embd)
-for i in range(args.n_layer):
-    init_state[5 * i + 4] = -1e30  # -infinity
+# for i in range(args.n_layer):
+#     init_state[5 * i + 4] = -1e30  # -infinity
 
 print("Enter warm-up")
 for token in tokenizer.encode(context).ids:

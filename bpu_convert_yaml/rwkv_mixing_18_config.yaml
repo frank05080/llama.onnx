@@ -14,7 +14,7 @@ model_parameters:
   # Onnx浮点网络数据模型文件
   # ---------------------------------------------------------------------------------------------------------
   # the model file of floating-point Onnx neural network data
-  onnx_model: '/home/ros/share_dir/gitrepos/llama.onnx/tools/models/mixing_18.onnx'
+  onnx_model: '/home/ros/share_dir/gitrepos/llama.onnx/data/hb_check_optimized_float_models/mixing_18.onnx'
 
   # 适用BPU架构
   # --------------------------------
@@ -134,7 +134,7 @@ calibration_parameters:
   # and try to avoid those overexposed, oversaturated, vague, 
   # pure blank or pure white images
   # use ';' to seperate when there are multiple input nodes
-  cal_data_dir: '/home/ros/share_dir/gitrepos/llama.onnx/tools/input_calib_mixing_18_input; /home/ros/share_dir/gitrepos/llama.onnx/tools/input_calib_mixing_18_state_in'
+  cal_data_dir: '/home/ros/share_dir/gitrepos/llama.onnx/data/calib_data/input_calib_mixing_18_input; /home/ros/share_dir/gitrepos/llama.onnx/data/calib_data/input_calib_mixing_18_state_in'
 
   # 校准数据二进制文件的数据存储类型，可选值为：float32, uint8
   # calibration data binary file save type, available options: float32, uint8

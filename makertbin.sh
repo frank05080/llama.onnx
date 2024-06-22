@@ -9,14 +9,15 @@ config_file="${config_path}/rwkv_head_config.yaml"
 full_command="${base_command} ${config_file} --model-type onnx"
 echo "Running command: ${full_command}" 
 $full_command
-dst_dir="/home/ros/share_dir/gitrepos/llama.onnx/bpu_convert_yaml/model_convert_output_rwkv_head"
+dst_dir="/home/ros/share_dir/gitrepos/llama.onnx/data/output_bin"
+mkdir -p ${dst_dir}
 if [ -d "$src_dir" ]; then
-    mv "$src_dir" "$dst_dir"
-    echo "Renamed ${src_dir} to ${dst_dir}"
+    mv "$src_dir" "${dst_dir}/model_convert_output_rwkv_head"
+    echo "Renamed ${src_dir} to ${dst_dir}/model_convert_output_rwkv_head"
 else
     echo "Directory ${src_dir} does not exist. Skipping rename."
 fi
-mv "/home/ros/share_dir/gitrepos/llama.onnx/hb_mapper_makertbin.log" "${dst_dir}"
+mv "/home/ros/share_dir/gitrepos/llama.onnx/hb_mapper_makertbin.log" "${dst_dir}/model_convert_output_rwkv_head"
 
 ###############################################
 
@@ -30,14 +31,13 @@ for i in {0..23}; do
   $full_command
 
   # Rename the output folder
-  dst_dir="/home/ros/share_dir/gitrepos/llama.onnx/bpu_convert_yaml/model_convert_output_rwkv_mixing_${i}"
   if [ -d "$src_dir" ]; then
-    mv "$src_dir" "$dst_dir"
-    echo "Renamed ${src_dir} to ${dst_dir}"
+    mv "$src_dir" "${dst_dir}/model_convert_output_rwkv_mixing_${i}"
+    echo "Renamed ${src_dir} to ${dst_dir}/model_convert_output_rwkv_mixing_${i}"
   else
     echo "Directory ${src_dir} does not exist. Skipping rename."
   fi
 
-  mv "/home/ros/share_dir/gitrepos/llama.onnx/hb_mapper_makertbin.log" "${dst_dir}"
+  mv "/home/ros/share_dir/gitrepos/llama.onnx/hb_mapper_makertbin.log" "${dst_dir}/model_convert_output_rwkv_mixing_${i}"
 
 done
