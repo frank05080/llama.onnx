@@ -166,41 +166,74 @@ int main(int argc, char **argv)
     auto in_out_vec = fill_inputs_outputs(dnn_handles);
 
     // // 3. 读取.bin
-    // std::string filepath = "/root/rwkv/head_input.bin";
-    // size_t num_elements = 1024;
-    // std::vector<float> data;
-    // try {
-    //     data = read_binary_file(filepath, num_elements);
-    //     std::cout << "Read " << data.size() << " elements from " << filepath << std::endl;
+    std::string filepath = "/root/rwkv/inputs/head_input.bin";
+    size_t num_elements = 1024;
+    std::vector<float> head_data;
+    try
+    {
+        head_data = read_binary_file(filepath, num_elements);
+        std::cout << "Read " << head_data.size() << " elements from " << filepath << std::endl;
+        // Print the data (optional)
+        // for (size_t i = 0; i < data.size(); ++i) {
+        //     std::cout << data[i] << " ";
+        //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
+        //         std::cout << std::endl;
+        //     }
+        // }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 
-    //     // Print the data (optional)
-    //     // for (size_t i = 0; i < data.size(); ++i) {
-    //     //     std::cout << data[i] << " ";
-    //     //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
-    //     //         std::cout << std::endl;
-    //     //     }
-    //     // }
-    // } catch (const std::exception& e) {
-    //     std::cerr << e.what() << std::endl;
+    // 4. 将.bin写入tensor
+    auto vir_addr = in_out_vec[0].first[0].sysMem[0].virAddr;
+    std::memcpy(vir_addr, head_data.data(), head_data.size() * sizeof(float)); // pass the pointer to the data contained in the vector
+    // // Check the size in vir_addr by printing out the values (Optional)
+    // float* vir_addr_float = reinterpret_cast<float*>(vir_addr); // vir_addr is void*
+    // std::cout << "Data in vir_addr:" << std::endl;
+    // for (size_t i = 0; i < data.size(); ++i) {
+    //     std::cout << vir_addr_float[i] << " ";
+    //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
+    //         std::cout << std::endl;
+    //     }
     // }
 
-    // // 4. 将.bin写入tensor
-    // auto vir_addr = input_tensors[0].sysMem[0].virAddr;
-    // /**
-    //  * data.data(): This returns a pointer to the first element in the vector, which can be used with memcpy.
-    //  * data.size() * sizeof(float): This calculates the total number of bytes to copy.
-    // */
-    // std::memcpy(vir_addr, data.data(), data.size() * sizeof(float)); // pass the pointer to the data contained in the vector
-
-    // // Check the size in vir_addr by printing out the values (Optional)
-    // // float* vir_addr_float = reinterpret_cast<float*>(input_tensors[0].sysMem[0].virAddr); // vir_addr is void*
-    // // std::cout << "Data in vir_addr:" << std::endl;
-    // // for (size_t i = 0; i < data.size(); ++i) {
-    // //     std::cout << vir_addr_float[i] << " ";
-    // //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
-    // //         std::cout << std::endl;
-    // //     }
-    // // }
+    // 3. 读取bin
+    std::vector<std::pair<std::string, std::string>> mixing_inputs_filepaths = {
+        {"/root/rwkv/inputs/mixing_0_input_0.bin", "/root/rwkv/inputs/mixing_0_input_1.bin"}};
+    std::vector<std::pair<std::vector<float>, std::vector<float>>> mixing_data;
+    std::vector<float> mixing_data_first;
+    std::vector<float> mixing_data_second;
+    std::string first_input_path;
+    std::string second_input_path;
+    for (int i = 0; i < mixing_inputs_filepaths.size(); i++)
+    {
+        first_input_path = mixing_inputs_filepaths[0].first;
+        second_input_path = mixing_inputs_filepaths[0].second;
+        try
+        {
+            mixing_data_first = read_binary_file(first_input_path, num_elements);
+            std::cout << "Read " << mixing_data_first.size() << " elements from " << first_input_path << std::endl;
+            // Print the data (optional)
+            // for (size_t i = 0; i < data.size(); ++i) {
+            //     std::cout << data[i] << " ";
+            //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
+            //         std::cout << std::endl;
+            //     }
+            // }
+            mixing_data_second = read_binary_file(second_input_path, num_elements * 5);
+            std::cout << "Read " << mixing_data_first.size() << " elements from " << first_input_path << std::endl;
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
+        vir_addr = in_out_vec[i + 1].first[0].sysMem[0].virAddr;
+        std::memcpy(vir_addr, mixing_data_first.data(), mixing_data_first.size() * sizeof(float));
+        vir_addr = in_out_vec[i + 1].first[1].sysMem[0].virAddr;
+        std::memcpy(vir_addr, mixing_data_second.data(), mixing_data_second.size() * sizeof(float));
+    }
 
     // // 5. 执行推理
     // hbDNNTaskHandle_t task_handle = nullptr;
