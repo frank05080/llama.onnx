@@ -19,7 +19,19 @@ np.set_printoptions(precision=4, suppress=True, linewidth=200)
 import types, torch
 from torch.nn import functional as F
 from tokenizers import Tokenizer
+import argparse
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='rwkv.onnx onnxruntime demo')
+    parser.add_argument('--context', type=str, default="\nWhat is Nvidia?")
+    parser.add_argument('--input_folder_path', type=str, default="/home/ros/share_dir/gitrepos/llama.onnx/data/ptdumped_inputs") # compare with acc above
+    parser.add_argument("--dump_inputs", type=bool, default=False)
+    parser.add_argument("--save_only", type=bool, default=False)
+    args = parser.parse_args()
+    return args
+
+parseArgs = parse_args()
+context = parseArgs.context
 
 model_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/data/pt2onnx_models'
 if not os.path.exists(model_folder_path):
@@ -28,7 +40,7 @@ if not os.path.exists(model_folder_path):
 else:
     print(f'Folder already exists: {model_folder_path}')
     
-input_folder_path = '/home/ros/share_dir/gitrepos/llama.onnx/data/ptdumped_inputs'
+input_folder_path = parseArgs.input_folder_path
 if not os.path.exists(input_folder_path):
     os.makedirs(input_folder_path)
     print(f'Folder created: {input_folder_path}')
@@ -46,7 +58,7 @@ args.n_embd = 1024
 # context = "HorizonRobotics"
 # context = "Nvidia is"
 # context = "Robotics and AI"
-context = "\nWhat is Nvidia?"
+# context = "\nWhat is Nvidia?"
 # context = "\nIn a shocking finding"
 # context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 NUM_TRIALS = 1
@@ -54,8 +66,8 @@ LENGTH_PER_TRIAL = 50
 TEMPERATURE = 1.0
 TOP_P = 0.85
 CONVERT_FLOAT16 = False
-DUMP_INPUT = False # if the models folder not exists, it will export onnx model too # used to generate inputs{i} folder in tools
-SAVE_ONLY = False # only save, dont care outputs
+DUMP_INPUT = parseArgs.dump_inputs # if the models folder not exists, it will export onnx model too # used to generate inputs{i} folder in tools
+SAVE_ONLY = parseArgs.save_only # only save, dont care outputs
 
 
 ########################################################################################################
@@ -316,6 +328,7 @@ class RWKV_RNN(torch.jit.ScriptModule):
                 if SAVE_ONLY:
                     print('ONNX input {} saved'.format(bin_filepath))
             if not os.path.exists(onnx_filepath): # if not exist, export onnx
+                print("ABOUT TO EXPORT ONNX!!!")
                 onnx_inp_names = ["token"]
                 onnx_out_names = ["output"]
                 torch.onnx.export(
