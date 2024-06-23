@@ -60,3 +60,16 @@ print("output[0].shape: ", output[0].shape)
 print("output[0]: ", output[0])
 print("output[1].shape: ", output[1].shape)
 print("output[1]: ", output[1])
+print()
+print()
+
+input_bin_file = "/home/ros/share_dir/gitrepos/llama.onnx/data/calib_data/input_calib_mixing_1_input/mixing_1_input_0.bin"
+data1 = np.fromfile(input_bin_file, dtype=np.float32)
+print(data1)
+print(data1.shape)
+
+input_bin_file = "/home/ros/share_dir/gitrepos/llama.onnx/data/calib_data/input_calib_mixing_1_state_in/mixing_1_input_1.bin"
+data2 = np.fromfile(input_bin_file, dtype=np.float32)
+data2 = data2.reshape((5,1024))
+print(data2)
+print(data2.shape)
