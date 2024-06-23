@@ -49,7 +49,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='rwkv.onnx onnxruntime demo')
     parser.add_argument('--onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/data/pt2onnx_models", help='rwkv onnx model directory.')
     # parser.add_argument('--hb_onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/data/hb_check_optimized_float_models", help='rwkv onnx model directory.')
-    parser.add_argument('--hb_onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/data/hb_check_quantized_models", help='rwksv onnx model directory.') # compare with acc above
+    parser.add_argument('--hb_onnxdir', default="/home/ros/share_dir/gitrepos/llama.onnx/data/hb_check_quantized_models", help='rwkv onnx model directory.') # compare with acc above
     parser.add_argument('--length', type=int, default=20, help='max output length.')
     parser.add_argument('--n_layer', type=int, default=24, help='layer number, use 24 by default.')
     parser.add_argument('--n_embd', type=int, default=1024, help='embedding length, use 1024 by default.')
