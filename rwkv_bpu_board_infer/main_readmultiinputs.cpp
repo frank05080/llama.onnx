@@ -120,10 +120,41 @@ std::vector<hbDNNHandle_t> initialize_dnn_handles(const std::vector<std::string>
     return dnn_handles;
 }
 
+std::vector<std::pair<std::vector<hbDNNTensor>, std::vector<hbDNNTensor>>> fill_inputs_outputs(const std::vector<hbDNNHandle_t> &dnn_handles)
+{
+    std::vector<std::pair<std::vector<hbDNNTensor>, std::vector<hbDNNTensor>>> tensors_vector;
+
+    for (auto dnn_handle : dnn_handles)
+    {
+        std::vector<hbDNNTensor> input_tensors;
+        std::vector<hbDNNTensor> output_tensors;
+        int input_count = 0;
+        int output_count = 0;
+
+        int ret = hbDNNGetInputCount(&input_count, dnn_handle);
+        check_ret(ret);
+        std::cout << "input_count is: " << input_count << std::endl;
+
+        ret = hbDNNGetOutputCount(&output_count, dnn_handle);
+        check_ret(ret);
+        std::cout << "output_count is: " << output_count << std::endl;
+
+        input_tensors.resize(input_count);
+        output_tensors.resize(output_count);
+
+        prepare_tensor(input_tensors.data(), output_tensors.data(), dnn_handle, input_count, output_count);
+
+        tensors_vector.emplace_back(input_tensors, output_tensors);
+    }
+
+    return tensors_vector;
+}
+
 int main(int argc, char **argv)
 {
     // 1. 加载模型
     std::vector<std::string> model_files = {
+        "/root/rwkv/models/rwkv_head.bin",
         "/root/rwkv/models/rwkv_mixing_0.bin"};
     std::vector<hbDNNHandle_t> dnn_handles = initialize_dnn_handles(model_files);
     for (size_t i = 0; i < dnn_handles.size(); ++i)
@@ -132,117 +163,77 @@ int main(int argc, char **argv)
     }
 
     // 2. 获取input/output信息
-    std::vector<hbDNNTensor> input_tensors;
-    std::vector<hbDNNTensor> output_tensors;
+    auto in_out_vec = fill_inputs_outputs(dnn_handles);
 
-    int input_count = 0;
-    int output_count = 0;
-    auto ret = hbDNNGetInputCount(&input_count, dnn_handles[0]);
-    check_ret(ret);
-    std::cout << "input_count is: " << input_count << std::endl;
-    ret = hbDNNGetOutputCount(&output_count, dnn_handles[0]);
-    check_ret(ret);
-    std::cout << "output_count is: " << output_count << std::endl;
-    input_tensors.resize(input_count);
-    output_tensors.resize(output_count);
+    // // 3. 读取.bin
+    std::string filepath = "/root/rwkv/inputs/head_input.bin";
+    size_t num_elements = 1024;
+    std::vector<float> head_data;
+    try
+    {
+        head_data = read_binary_file(filepath, num_elements);
+        std::cout << "Read " << head_data.size() << " elements from " << filepath << std::endl;
+        // Print the data (optional)
+        // for (size_t i = 0; i < data.size(); ++i) {
+        //     std::cout << data[i] << " ";
+        //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
+        //         std::cout << std::endl;
+        //     }
+        // }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 
-    prepare_tensor(input_tensors.data(), output_tensors.data(), dnn_handles[0], input_count, output_count);
+    // 4. 将.bin写入tensor
+    auto vir_addr = in_out_vec[0].first[0].sysMem[0].virAddr;
+    std::memcpy(vir_addr, head_data.data(), head_data.size() * sizeof(float)); // pass the pointer to the data contained in the vector
+    // // Check the size in vir_addr by printing out the values (Optional)
+    // float* vir_addr_float = reinterpret_cast<float*>(vir_addr); // vir_addr is void*
+    // std::cout << "Data in vir_addr:" << std::endl;
+    // for (size_t i = 0; i < data.size(); ++i) {
+    //     std::cout << vir_addr_float[i] << " ";
+    //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
+    //         std::cout << std::endl;
+    //     }
+    // }
 
     // 3. 读取bin
-    std::string filepath = "/root/rwkv/inputs/mixing_0_input_0.bin";
-    size_t num_elements = 1024;
-    std::vector<float> input0_data; 
-    try {
-        input0_data = read_binary_file(filepath, num_elements);
-        std::cout << "Read " << input0_data.size() << " elements from " << filepath << std::endl;
-        // Print the data (optional)
-        // for (size_t i = 0; i < data.size(); ++i) {
-        //     std::cout << data[i] << " ";
-        //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
-        //         std::cout << std::endl;
-        //     }
-        // }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
-    // 4. 将.bin写入tensor
-    auto vir_addr = input_tensors[0].sysMem[0].virAddr;
-    std::memcpy(vir_addr, input0_data.data(), input0_data.size() * sizeof(float)); // pass the pointer to the data contained in the vector
-    // Check the size in vir_addr by printing out the values (Optional)
-    float* vir_addr_float = reinterpret_cast<float*>(input_tensors[0].sysMem[0].virAddr); // vir_addr is void*
-    std::cout << "Data in vir_addr:" << std::endl;
-    for (size_t i = 0; i < 100; ++i) { // input0_data.size()
-        std::cout << vir_addr_float[i] << " ";
-        if ((i + 1) % 10 == 0) { // Print 10 elements per line
-            std::cout << std::endl;
+    std::vector<std::pair<std::string, std::string>> mixing_inputs_filepaths = {
+        {"/root/rwkv/inputs/mixing_0_input_0.bin", "/root/rwkv/inputs/mixing_0_input_1.bin"}};
+    std::vector<std::pair<std::vector<float>, std::vector<float>>> mixing_data;
+    std::vector<float> mixing_data_first;
+    std::vector<float> mixing_data_second;
+    std::string first_input_path;
+    std::string second_input_path;
+    for (int i = 0; i < mixing_inputs_filepaths.size(); i++)
+    {
+        first_input_path = mixing_inputs_filepaths[0].first;
+        second_input_path = mixing_inputs_filepaths[0].second;
+        try
+        {
+            mixing_data_first = read_binary_file(first_input_path, num_elements);
+            std::cout << "Read " << mixing_data_first.size() << " elements from " << first_input_path << std::endl;
+            // Print the data (optional)
+            // for (size_t i = 0; i < data.size(); ++i) {
+            //     std::cout << data[i] << " ";
+            //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
+            //         std::cout << std::endl;
+            //     }
+            // }
+            mixing_data_second = read_binary_file(second_input_path, num_elements * 5);
+            std::cout << "Read " << mixing_data_first.size() << " elements from " << first_input_path << std::endl;
         }
-    }
-    std::cout << std::endl;
-
-    filepath = "/root/rwkv/inputs/mixing_0_input_1.bin";
-    std::vector<float> input1_data; 
-    int rows = 5;
-    int cols = 1024;
-    try {
-        input1_data = read_binary_file(filepath, num_elements*5);
-
-    
-        ///// Wrong result below!!
-        // // Create a 2D vector to hold the data
-        // std::vector<std::vector<float>> input1_data(rows, std::vector<float>(cols));
-        // // Open the binary file
-        // std::ifstream file(filepath, std::ios::binary);
-        // if (!file) {
-        //     throw std::runtime_error("Cannot open file: " + filepath);
-        // }
-        // // Read the data from the file into a temporary 1D vector
-        // std::vector<float> temp(rows * cols);
-        // file.read(reinterpret_cast<char *>(temp.data()), rows * cols * sizeof(float));
-        // // Check if the read was successful
-        // if (!file) {
-        //     throw std::runtime_error("Error reading file: " + filepath);
-        // }
-        // // Close the file
-        // file.close();
-        // // Copy data from the 1D vector to the 2D vector
-        // for (int i = 0; i < rows; ++i) {
-        //     for (int j = 0; j < cols; ++j) {
-        //         input1_data[i][j] = temp[i * cols + j];
-        //     }
-        // }
-        // // Print the data (optional, for large arrays you might want to limit the output)
-        // for (int i = 0; i < rows; ++i) {
-        //     for (int j = 0; j < cols; ++j) {
-        //         std::cout << input1_data[i][j] << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-
-
-        // std::cout << "Read " << input1_data.size() << " elements from " << filepath << std::endl;
-        // Print the data (optional)
-        // for (size_t i = 0; i < data.size(); ++i) {
-        //     std::cout << data[i] << " ";
-        //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
-        //         std::cout << std::endl;
-        //     }
-        // }
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
-    // 4. 将.bin写入tensor
-    vir_addr = input_tensors[1].sysMem[0].virAddr;
-    std::memcpy(vir_addr, input1_data.data(), input1_data.size() * sizeof(float));
-    vir_addr_float = reinterpret_cast<float*>(input_tensors[1].sysMem[0].virAddr); // vir_addr is void*
-    std::cout << "Data in vir_addr:" << std::endl;
-    for (size_t i = 0; i < 100; ++i) { // input0_data.size()
-        std::cout << vir_addr_float[i] << " ";
-        if ((i + 1) % 10 == 0) { // Print 10 elements per line
-            std::cout << std::endl;
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << std::endl;
         }
+        vir_addr = in_out_vec[i + 1].first[0].sysMem[0].virAddr;
+        std::memcpy(vir_addr, mixing_data_first.data(), mixing_data_first.size() * sizeof(float));
+        vir_addr = in_out_vec[i + 1].first[1].sysMem[0].virAddr;
+        std::memcpy(vir_addr, mixing_data_second.data(), mixing_data_second.size() * sizeof(float));
     }
-    std::cout << std::endl;
-
 
     // 5. 执行推理
     hbDNNTaskHandle_t task_handle = nullptr;
@@ -255,31 +246,22 @@ int main(int argc, char **argv)
     hbDNNInferCtrlParam infer_ctl_param;
     HB_DNN_INITIALIZE_INFER_CTRL_PARAM(&infer_ctl_param);
 
-    hbDNNInfer(&task_handle, &output, input_tensors.data(), dnn_handles[0], &infer_ctl_param);
+    hbDNNInfer(&task_handle, &output, input_tensors.data(), dnn_handle, &infer_ctl_param);
     hbDNNWaitTaskDone(task_handle, 0);
 
-    // 6. 后处理
-    for(int i=0; i<output_count; i++){
-        hbSysFlushMem(&output_tensors[i].sysMem[0], HB_SYS_MEM_CACHE_INVALIDATE);
-    }
+    // // 6. 后处理
+    // for(int i=0; i<output_count; i++){
+    //     hbSysFlushMem(&output_tensors[i].sysMem[0], HB_SYS_MEM_CACHE_INVALIDATE);
+    // }
 
-    float* out_vir_addr_float = reinterpret_cast<float*>(output_tensors[0].sysMem[0].virAddr); // vir_addr is void*
-    std::cout << "Data in vir_addr:" << std::endl;
-    for (size_t i = 0; i < 100; ++i) {
-        std::cout << out_vir_addr_float[i] << " ";
-        if ((i + 1) % 10 == 0) { // Print 10 elements per line
-            std::cout << std::endl;
-        }
-    }
-    std::cout << std::endl;
-    out_vir_addr_float = reinterpret_cast<float*>(output_tensors[1].sysMem[0].virAddr); // vir_addr is void*
-    std::cout << "Data in vir_addr:" << std::endl;
-    for (size_t i = 0; i < 100; ++i) {
-        std::cout << out_vir_addr_float[i] << " ";
-        if ((i + 1) % 10 == 0) { // Print 10 elements per line
-            std::cout << std::endl;
-        }
-    }
+    // float* out_vir_addr_float = reinterpret_cast<float*>(output_tensors[0].sysMem[0].virAddr); // vir_addr is void*
+    // std::cout << "Data in vir_addr:" << std::endl;
+    // for (size_t i = 0; i < 100; ++i) {
+    //     std::cout << out_vir_addr_float[i] << " ";
+    //     if ((i + 1) % 10 == 0) { // Print 10 elements per line
+    //         std::cout << std::endl;
+    //     }
+    // }
 
     return 0;
 }
