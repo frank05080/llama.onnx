@@ -9,3 +9,4 @@ tools/inputs*
 tools/input_calib_*
 bpu_convert_yaml/model_convert_output_rwkv*
 data
+性能测试
