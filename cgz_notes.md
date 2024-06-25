@@ -49,6 +49,7 @@ bash create_calib_dir_multi.sh
 
 ## get output bins and quantized models
 
+bash create_yaml.sh
 bash makertbin.sh
 
 ## gathers quantized model
