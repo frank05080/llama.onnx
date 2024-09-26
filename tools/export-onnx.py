@@ -56,5 +56,5 @@ class Predictor():
         return out
 
 # x = Predictor(sys.argv[1])
-x = Predictor() # TODO fill in alpaca huggingface/modelscope path
+x = Predictor("/home/ros/share_dir/gitrepos/llama.onnx/llama/llama_cache/AI-ModelScope/chinese-alpaca-2-7b") # TODO fill in alpaca huggingface/modelscope path
 x.predict()
