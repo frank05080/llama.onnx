@@ -21,7 +21,8 @@ CACHE_DIR = 'alpaca_out'
 
 class Predictor():
     def __init__(self, outdir):
-        self.device = 'cuda'
+        # self.device = 'cuda'
+        self.device = 'cpu'
         self.model = LlamaForCausalLM.from_pretrained(outdir, cache_dir=CACHE_DIR, local_files_only=True)
         self.model.to(self.device)
         self.tokenizer = LlamaTokenizer.from_pretrained(outdir, cache_dir=CACHE_DIR, local_files_only=True)
@@ -54,5 +55,6 @@ class Predictor():
         print('Q: {} A: {}'.format(prompt, out))
         return out
 
-x = Predictor(sys.argv[1])
+# x = Predictor(sys.argv[1])
+x = Predictor() # TODO fill in alpaca huggingface/modelscope path
 x.predict()
